@@ -25,10 +25,9 @@ female_height = female_data.Height.dropna().mean().round(0)
 male_data = olympic_data[olympic_data.Sex == "M"]
 male_height = male_data.Height.dropna().mean().round(0)
 
-for dataset in [olympic_data]:
-    if dataset['Sex'] is 'F':
-        dataset['Height'] = dataset['Height'].fillna(female_height)
-    else:
-        dataset['Height'] = dataset['Height'].fillna(male_height)
-
-print olympic_data.Height
+olympic_data['Height'] = olympic_data.apply(
+lambda row: female_height if np.isnan(row['Height']) and row['Sex'] is 'F' else row['Height'], axis=1
+)
+olympic_data['Height'] = olympic_data.apply(
+lambda row: male_height if np.isnan(row['Height']) and row['Sex'] is 'M' else row['Height'], axis=1
+)
