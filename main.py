@@ -19,4 +19,16 @@ def overview(data):
     print('non numeric columns')
     print data.describe(include=[np.object])
 
+#fill NA heights
+female_data = olympic_data[olympic_data.Sex == "F"]
+female_height = female_data.Height.dropna().mean().round(0)
+male_data = olympic_data[olympic_data.Sex == "M"]
+male_height = male_data.Height.dropna().mean().round(0)
+
+for dataset in [olympic_data]:
+    if dataset['Sex'] is 'F':
+        dataset['Height'] = dataset['Height'].fillna(female_height)
+    else:
+        dataset['Height'] = dataset['Height'].fillna(male_height)
+
 print olympic_data.Height
