@@ -38,20 +38,36 @@ trait_fill('Age', 'F')
 for dataset in [olympic_data]:
     dataset['Sex'] = dataset['Sex'].map({'F': 0, 'M': 1}).astype(int)
 
-p = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).count()
+#athlete count of summer and winter games
+winter_athlete_count = olympic_data[olympic_data.Season == 'Winter']
+summer_athlete_count = olympic_data[olympic_data.Season == 'Summer']
+winter_athlete_count = winter_athlete_count[['Year', 'ID']].groupby(['Year'], as_index=False).count()
+summer_athlete_count = summer_athlete_count[['Year', 'ID']].groupby(['Year'], as_index=False).count()
+winter_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'winter_count'}, inplace=True)
+summer_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'summer_count'}, inplace=True)
+
+years = sorted(olympic_data['Year'].unique())
+games_counts = pd.DataFrame({})
+games_counts['Year'] = pd.Series(years)
+games_counts = pd.merge(winter_athlete_count, summer_athlete_count, how='outer')
+games_counts.sort_values(by=['Year'], inplace=True)
+games_counts.plot(x='Year', y=['winter_count', 'summer_count'])
+
+#get ratio of men to women at each game
+sex_ratio = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).count()
 p1 = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).sum()
 p1 = p1['Sex'].astype(int).tolist()
-p2 = p['Sex'].astype(int).tolist()
+p2 = sex_ratio['Sex'].astype(int).tolist()
 
 female_count = []
 for i in range(len(p1)):
     female_count.append(p2[i] - p1[i])
-p['F'] = pd.Series(female_count)
+sex_ratio['F'] = pd.Series(female_count)
 
-for dataset in [p]:
+for dataset in [sex_ratio]:
     dataset['M/F'] = dataset['Sex'] / dataset['F']
 
-# p.plot(x='Games', y=['Sex', 'F'])
-p.plot(x='Games', y='M/F')
+sex_ratio.rename(index=str, columns={'Sex': 'M', 'F':'F'}, inplace=True)
+# sex_ratio.plot(x='Games', y='M/F')
 
 plt.show()
