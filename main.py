@@ -38,7 +38,7 @@ trait_fill('Age', 'F')
 for dataset in [olympic_data]:
     dataset['Sex'] = dataset['Sex'].map({'F': 0, 'M': 1}).astype(int)
 
-#athlete count of summer and winter games
+#athlete count of summer and winter games---------------------------------------
 winter_athlete_count = olympic_data[olympic_data.Season == 'Winter']
 summer_athlete_count = olympic_data[olympic_data.Season == 'Summer']
 winter_athlete_count = winter_athlete_count[['Year', 'ID']].groupby(['Year'], as_index=False).count()
@@ -51,9 +51,11 @@ games_counts = pd.DataFrame({})
 games_counts['Year'] = pd.Series(years)
 games_counts = pd.merge(winter_athlete_count, summer_athlete_count, how='outer')
 games_counts.sort_values(by=['Year'], inplace=True)
-games_counts.plot(x='Year', y=['winter_count', 'summer_count'])
+games_counts.fillna(method='ffill', inplace=True)
 
-#get ratio of men to women at each game
+# games_counts.plot(x='Year', y=['winter_count', 'summer_count'])
+
+#get ratio of men to women at each game-----------------------------------------
 sex_ratio = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).count()
 p1 = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).sum()
 p1 = p1['Sex'].astype(int).tolist()
@@ -68,6 +70,30 @@ for dataset in [sex_ratio]:
     dataset['M/F'] = dataset['Sex'] / dataset['F']
 
 sex_ratio.rename(index=str, columns={'Sex': 'M', 'F':'F'}, inplace=True)
+
 # sex_ratio.plot(x='Games', y='M/F')
+
+#TODO number of events each olympics-------------------------------------------------
+games = olympic_data[['Season', 'Year', 'Event']]
+winter = games[games.Season == 'Winter']
+winter_events_count = pd.DataFrame({'Year': winter.Year.unique(), 'winter_count':  winter.Year.unique()})
+
+for i, row in winter_events_count.iterrows():
+    count = len(winter[winter['Year'] == row['Year']]['Event'].unique().tolist())
+    row['winter_count'] = count
+
+summer = games[games.Season == 'Summer']
+summer_events_count = pd.DataFrame({'Year': summer.Year.unique(), 'summer_count':  summer.Year.unique()})
+
+for i, row in summer_events_count.iterrows():
+    count = len(summer[summer['Year'] == row['Year']]['Event'].unique().tolist())
+    row['summer_count'] = count
+
+games_events_count = pd.DataFrame({'Year': olympic_data['Year'].unique()})
+games_events_count = pd.merge(winter_events_count, summer_events_count, how='outer')
+games_events_count.sort_values(by=['Year'], inplace=True)
+games_events_count.fillna(method='ffill', inplace=True)
+
+# games_events_count.plot(x='Year', y=['winter_count', 'summer_count'])
 
 plt.show()
