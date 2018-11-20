@@ -1,7 +1,7 @@
 import csv
 import pandas as pd
 import numpy as np
-import seaborn as sns
+import seaborn as sns; sns.set()
 import matplotlib.pyplot as plt
 
 olympic_data = pd.read_csv("athlete_events.csv")
@@ -27,6 +27,12 @@ def trait_fill(col, sex):
     lambda row: val if np.isnan(row[col]) and row['Sex'] is sex else row[col], axis=1
     )
 
+def df_year_build(d1, d2, by):
+    df = pd.merge(d1, d2, how='outer')
+    df.sort_values(by=by, inplace=True)
+    df.fillna(method='ffill', inplace=True)
+    return df
+
 trait_fill('Height', 'M')
 trait_fill('Height', 'F')
 trait_fill('Weight', 'M')
@@ -43,17 +49,15 @@ winter_athlete_count = olympic_data[olympic_data.Season == 'Winter']
 summer_athlete_count = olympic_data[olympic_data.Season == 'Summer']
 winter_athlete_count = winter_athlete_count[['Year', 'ID']].groupby(['Year'], as_index=False).count()
 summer_athlete_count = summer_athlete_count[['Year', 'ID']].groupby(['Year'], as_index=False).count()
-winter_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'winter_count'}, inplace=True)
-summer_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'summer_count'}, inplace=True)
+winter_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'winter_athlete_count'}, inplace=True)
+summer_athlete_count.rename(index=str, columns={'Year': 'Year', 'ID': 'summer_athlete_count'}, inplace=True)
 
 years = sorted(olympic_data['Year'].unique())
 games_counts = pd.DataFrame({})
 games_counts['Year'] = pd.Series(years)
-games_counts = pd.merge(winter_athlete_count, summer_athlete_count, how='outer')
-games_counts.sort_values(by=['Year'], inplace=True)
-games_counts.fillna(method='ffill', inplace=True)
+games_counts = df_year_build(winter_athlete_count, summer_athlete_count, 'Year')
 
-# games_counts.plot(x='Year', y=['winter_count', 'summer_count'])
+games_counts.plot(x='Year', y=['winter_athlete_count', 'summer_athlete_count'])
 
 #get ratio of men to women at each game-----------------------------------------
 sex_ratio = olympic_data[['Games', 'Sex']].groupby(['Games'], as_index=False).count()
@@ -73,27 +77,30 @@ sex_ratio.rename(index=str, columns={'Sex': 'M', 'F':'F'}, inplace=True)
 
 # sex_ratio.plot(x='Games', y='M/F')
 
-#TODO number of events each olympics-------------------------------------------------
+#number of events each olympics-------------------------------------------------
 games = olympic_data[['Season', 'Year', 'Event']]
 winter = games[games.Season == 'Winter']
-winter_events_count = pd.DataFrame({'Year': winter.Year.unique(), 'winter_count':  winter.Year.unique()})
+winter_events_count = pd.DataFrame({'Year': winter.Year.unique(), 'winter_event_count':  winter.Year.unique()})
 
 for i, row in winter_events_count.iterrows():
     count = len(winter[winter['Year'] == row['Year']]['Event'].unique().tolist())
-    row['winter_count'] = count
+    row['winter_event_count'] = count
 
 summer = games[games.Season == 'Summer']
-summer_events_count = pd.DataFrame({'Year': summer.Year.unique(), 'summer_count':  summer.Year.unique()})
+summer_events_count = pd.DataFrame({'Year': summer.Year.unique(), 'summer_event_count':  summer.Year.unique()})
 
 for i, row in summer_events_count.iterrows():
     count = len(summer[summer['Year'] == row['Year']]['Event'].unique().tolist())
-    row['summer_count'] = count
+    row['summer_event_count'] = count
 
 games_events_count = pd.DataFrame({'Year': olympic_data['Year'].unique()})
-games_events_count = pd.merge(winter_events_count, summer_events_count, how='outer')
-games_events_count.sort_values(by=['Year'], inplace=True)
-games_events_count.fillna(method='ffill', inplace=True)
+games_events_count = df_year_build(winter_events_count, summer_events_count, 'Year')
 
-# games_events_count.plot(x='Year', y=['winter_count', 'summer_count'])
+games_events_count.plot(x='Year', y=['winter_event_count', 'summer_event_count'])
+
+#male and female heights by season over time------------------------------------
+plot = sns.FacetGrid(olympic_data, row='Season', col='Sex')
+plot.map(sns.lineplot, 'Year', 'Height')
+plot.add_legend()
 
 plt.show()
