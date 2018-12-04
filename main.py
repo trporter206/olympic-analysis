@@ -108,19 +108,19 @@ def heights():
     plot.add_legend()
 
 #best performing athletes-------------------------------------------------------
-def performers():
+def top_olympians():
     medal_winners = olympic_data[olympic_data.Medal.notna()]
     unique_athletes = pd.Series(medal_winners['Name'].unique())
     top_athletes = pd.DataFrame({"Athlete": unique_athletes, "Medal_Count": unique_athletes})
+
     for i, row in top_athletes.iterrows():
-        medals = len(medal_winners[medal_winners['Name'] == row['Athlete']])
+        medals = len(medal_winners[medal_winners['Name'] == row['Athlete']]['Medal'].tolist())
         row['Medal_Count'] = medals
 
     top_athletes.sort_values(by=['Medal_Count'], ascending=False, inplace=True)
-    top_athletes = pd.to_numeric(top_athletes['Medal_Count'])
-    top_athletes.loc[10].plot(kind='bar')
-    # overview(top_athletes)
+    print top_athletes.head(10)
 
 
-performers()
+
+top_olympians()
 plt.show()
